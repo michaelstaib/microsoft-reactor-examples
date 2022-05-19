@@ -1,5 +1,7 @@
 # Integrating REST services into GraphQL
 
+## Part 1
+
 1. Head over to the `Program.cs` and chain in `.AddJsonSupport()`.
 
 ```csharp
@@ -38,6 +40,29 @@ builder.Services
 ```
 
 4. Now open `Types/Assets/AssetPriceNode.cs` and add the following resolver to it:
+
+```csharp
+[GraphQLType("AssetPriceChange")]
+public async Task<JsonElement> GetChangeAsync(
+    ChangeSpan span,
+    [Parent] AssetPrice parent,
+    [Service] IHttpClientFactory clientFactory,
+    CancellationToken cancellationToken)
+{
+    using HttpClient client = clientFactory.CreateClient(Constants.PriceInfoService);
+    using var message = new HttpRequestMessage(
+        HttpMethod.Get,
+        $"api/asset/price/change?symbol={parent.Symbol}&span={span}");
+    var response = await client.SendAsync(message, cancellationToken);
+    var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    var document = JsonDocument.Parse(content);
+    return document.RootElement;
+}
+```
+
+## Part 2
+
+1. Open `Types/Assets/AssetPriceNode.cs` and add the following resolver to it:
 
 ```csharp
 [GraphQLType("AssetPriceChange")]
